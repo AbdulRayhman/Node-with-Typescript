@@ -12,30 +12,56 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const jwt = __importStar(require("jsonwebtoken"));
+const mongoose_1 = require("mongoose");
 exports.app = express_1.default();
+const db = mongoose_1.connect('mongodb+srv://abdulrehmanFrt:LeChiffre!2141@userdb-tywac.mongodb.net/test?retryWrites=true&w=majority', { useNewUrlParser: true });
+db.then(res => {
+    console.log(res);
+}).catch(err => {
+    console.log(err);
+});
 const verifyToken = (req, res, next) => {
-    const bearerHeader = req.headers['Authorization'];
-    console.log(bearerHeader);
-    if (typeof bearerHeader !== undefined) {
-        console.log('Go a Head');
-        res.sendStatus(200);
+    const bearerHeader = req.headers['authorization'];
+    if (bearerHeader !== undefined) {
+        const bearer = bearerHeader.split(' ');
+        const bearerToken = bearer[1];
+        req.body = {
+            token: bearerToken,
+        };
+        next();
     }
     else {
-        res.sendStatus(403);
+        res.send({
+            status: 403,
+            message: 'Authorization Error!',
+        });
     }
 };
 exports.app.get('/api', (req, res, next) => {
     res.send("It's Works");
 });
 exports.app.post('/api/post', verifyToken, (req, res, next) => {
-    res.send('Post Created!!!');
+    jwt.verify(req.body.token, 'secretkey', (err, authData) => {
+        if (err) {
+            res.send({
+                status: 403,
+                message: 'Authorization Error!',
+            });
+        }
+        else {
+            res.json({
+                message: 'Post created!',
+                authData,
+            });
+        }
+    });
 });
 exports.app.post('/api/login', (req, res, next) => {
     const user = {
         username: 'abdulrehman',
         email: 'ab@gmail.com',
     };
-    jwt.sign({ user: user }, 'secretkey', (err, token) => {
+    jwt.sign({ user: user }, 'secretkey', { expiresIn: '20s' }, (err, token) => {
         console.log(err, token);
         res.json({ token: token });
     });

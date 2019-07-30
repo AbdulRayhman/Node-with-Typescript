@@ -1,7 +1,39 @@
 import express, { Application, Response, Request, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
+import { connect, Schema } from 'mongoose';
+import { Post } from './models/Posts';
 export const app: Application = express();
+const db = connect(
+	'mongodb+srv://<username>:<password>@userdb-tywac.mongodb.net/test?retryWrites=true&w=majority',
+	{ useNewUrlParser: true },
+);
+db.then(res => {
+	console.log('MongoDB Connected');
+}).catch(err => {
+	console.log(err);
+});
 
+const user = new Schema({
+	name: {
+		type: String,
+		required: true,
+	},
+	email: {
+		type: String,
+		required: true,
+	},
+	password: {
+		type: String,
+		required: true,
+	},
+	avatar: {
+		type: String,
+	},
+	date: {
+		type: Date,
+		default: Date.now,
+	},
+});
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {
 	const bearerHeader: any = req.headers['authorization'];
 	if (bearerHeader !== undefined) {
@@ -30,10 +62,13 @@ app.post('/api/post', verifyToken, (req: Request, res: Response, next: NextFunct
 				message: 'Authorization Error!',
 			});
 		} else {
-			res.json({
-				message: 'Post created!',
-				authData,
-			});
+			const newPost = new Post({ text: 'ddddd', title: 'sslkjdskl' });
+
+			newPost.save().then((post: any) => res.json(post));
+			// res.json({
+			// 	message: 'Post created!',
+			// 	authData,
+			// });
 		}
 	});
 });
